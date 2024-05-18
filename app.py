@@ -12,6 +12,7 @@ import emojis
 from wcwidth import wcwidth, wcswidth
 truncateWidth = 48
 teamCutOff = 18
+refreshRate = 10
 
 def center_with_wide_chars(text, width, fillchar=' '):
     text_width = wcswidth(text)
@@ -69,40 +70,54 @@ def run():
     title = "ON SITE SCOREBOARD"
     old_res = []
 
-    columns = shutil.get_terminal_size().columns
     # print("Lorem ipsum dolor sit amet, qui minim labore\nadipisicing minim sint\n cillum sint consectetur cupidatat.".center(columns))
     # exit()
+    timer = time.time()
+    oldOut=""
+    oldColumns=0
+    columns=0
     while True:
+        
+        if time.time() - timer > refreshRate: 
+            timer = time.time()
+            allTeams = getScoreboard()
+            # for i in range(len(allTeams)):
+            #     
+            #     print(allTeams[i][0], (allTeams[i][0].encode()), onSiteTeams[2], (onSiteTeams[2].encode()))  
+                
 
-        allTeams = getScoreboard()
-        # for i in range(len(allTeams)):
-        #     
-        #     print(allTeams[i][0], (allTeams[i][0].encode()), onSiteTeams[2], (onSiteTeams[2].encode()))  
-            
+            # rr = [team for team in ]
+            res = [team for index, team in enumerate(allTeams) if (team[0])[:truncateWidth] in onSiteTeams]
+            # print(res,"\n\n", old_res)
+            # __import__('pprint').pprint(res)
+            fin =  [team.insert(0,index+1) or team for index, team in enumerate(res)][:teamCutOff]
 
-        # rr = [team for team in ]
-        res = [team for index, team in enumerate(allTeams) if (team[0])[:truncateWidth] in onSiteTeams]
-        # print(res,"\n\n", old_res)
-        # __import__('pprint').pprint(res)
-        fin =  [team.insert(0,index+1) or team for index, team in enumerate(res)][:20]
+            if res == old_res:
+                old_res = copy.deepcopy(res)
+                continue
+            tab = tabulate(fin, heders,tablefmt="rounded_grid")
 
-        if res == old_res:
+
+
+            out = (chr(27) + "[2J")+"\n"+ title +"\n" + tab
+            # print(out.encode())
+            cout = "".join([ center_with_wide_chars(line, columns) for line in out.split("\n")])
+            # print(out.center(columns))
+            print(cout)
             old_res = copy.deepcopy(res)
-            continue
-        tab = tabulate(fin, heders,tablefmt="rounded_grid")
-        st = tab.split("\n")[0]
-
-
-
-        out = (chr(27) + "[2J")+"\n"+ title +"\n" + tab
-        # print(out.encode())
-        cout = "".join([ center_with_wide_chars(line, columns) for line in out.split("\n")])
-        # print(out.center(columns))
-        print(cout)
-        old_res = copy.deepcopy(res)
-        # print(tab)
-        time.sleep(10)
+            oldOut = out
+            # print(tab)
+        # time.sleep(10)
         # os.system("clear")
+        else:
+            columns = shutil.get_terminal_size().columns
+            # print(columns)
+            if columns != oldColumns:
+                cout = "".join([ center_with_wide_chars(line, columns) for line in oldOut.split("\n")])
+                print(cout)
+            oldColumns = columns
+
+        
 
         # print(res)
     return res
