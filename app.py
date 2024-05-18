@@ -9,6 +9,20 @@ import csv
 import copy
 from tabulate import tabulate
 import emojis
+from wcwidth import wcwidth, wcswidth
+truncateWidth = 48
+teamCutOff = 18
+
+def center_with_wide_chars(text, width, fillchar=' '):
+    text_width = wcswidth(text)
+    if text_width >= width:
+        return text
+    
+    total_padding = width - text_width
+    left_padding = total_padding // 2
+    right_padding = total_padding - left_padding
+    
+    return f"{fillchar * left_padding}{text}{fillchar * right_padding}"
 def getScoreboard():
     url = "https://bts.wh.edu.pl/scoreboard"
     r = requests.get(url).content
@@ -23,7 +37,7 @@ def getScoreboard():
         cols = row.find_all('td')
         cols = [ele.text.strip() for ele in cols]
         tab = [ele for ele in cols if ele]
-        fin = [emojis.decode(tab[0].split("\n")[0].strip())[:32], tab[1].strip()]
+        fin = [(tab[0].split("\n")[0].strip())[:truncateWidth], tab[1].strip()]
         data.append(fin)
     # print(data)
     # __import__('pprint').pprint(data)
@@ -41,7 +55,7 @@ def getOnSiteTeams():
                 if row[1].strip():
                 # print(row[1])
             # print(', '.join(row))
-                    s = emojis.decode(row[1])[:32]
+                    s = (row[1])[:truncateWidth]
                     data.append(s)
                     # print(s)
             is_firts = True
@@ -67,10 +81,10 @@ def run():
             
 
         # rr = [team for team in ]
-        res = [team for index, team in enumerate(allTeams) if emojis.decode(team[0])[:32] in onSiteTeams]
+        res = [team for index, team in enumerate(allTeams) if (team[0])[:truncateWidth] in onSiteTeams]
         # print(res,"\n\n", old_res)
         # __import__('pprint').pprint(res)
-        fin =  [team.insert(0,index+1) or team for index, team in enumerate(res)][:10]
+        fin =  [team.insert(0,index+1) or team for index, team in enumerate(res)][:20]
 
         if res == old_res:
             old_res = copy.deepcopy(res)
@@ -82,7 +96,7 @@ def run():
 
         out = (chr(27) + "[2J")+"\n"+ title +"\n" + tab
         # print(out.encode())
-        cout = "".join([line.center(columns) for line in out.split("\n")])
+        cout = "".join([ center_with_wide_chars(line, columns) for line in out.split("\n")])
         # print(out.center(columns))
         print(cout)
         old_res = copy.deepcopy(res)
